@@ -1,0 +1,5 @@
+"variable","class","n_obs","n_nonmissing","n_missing","min","max"
+"t","integer",220,220,0,1,220
+"s","numeric",220,220,0,0,0.95
+"p_B","numeric",220,220,0,0.65687921186573,0.992787752836336
+"choice_B","integer",220,220,0,0,1
