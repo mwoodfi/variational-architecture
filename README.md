@@ -57,7 +57,7 @@ Numerical equality should be assessed using tolerances documented in Appendix D 
 │   ├── 02_fit_cr_params.R              # W2: Single-subject estimation coherence
 │   ├── 03_run_W3_recovery.R            # W3: Finite-sample parameter recovery
 │   ├── 04_run_W4_crossfit.R            # W4: Cross-fitting discriminability & falsification
-│   ├── outputs/                        # Auto-generated; initially empty
+│   └── outputs/                        # Auto-generated; initially empty
 │       ├── data/
 │       ├── figures/
 │       └── tables/
@@ -91,13 +91,12 @@ Each script is self-contained and writes its outputs automatically.
 ### Option 2: Command Line
 From the repository root:
 
-  ```bash
+  bash
     cd src
     Rscript 01_cr_constant_omega.R
     Rscript 02_fit_cr_params.R
     Rscript 03_run_W3_recovery.R
     Rscript 04_run_W4_crossfit.R
-    ```
 
 Scripts may be executed independently or sequentially.
 Later stages assume outputs only in the conceptual sense, not as file dependencies.
