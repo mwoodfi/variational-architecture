@@ -1,0 +1,17 @@
+"dgp","selected","count","share_row_norm","share_na_winner_pen"
+"EFE_full","EFE_full",174,0.892307692307692,0.025
+"EFE_full","no_identity",0,0,0.025
+"EFE_full","no_epistemic",21,0.107692307692308,0.025
+"EFE_full","RI_cost",0,0,0.025
+"no_identity","EFE_full",1,0.00520833333333333,0.04
+"no_identity","no_identity",189,0.984375,0.04
+"no_identity","no_epistemic",1,0.00520833333333333,0.04
+"no_identity","RI_cost",1,0.00520833333333333,0.04
+"no_epistemic","EFE_full",0,0,0.08
+"no_epistemic","no_identity",0,0,0.08
+"no_epistemic","no_epistemic",184,1,0.08
+"no_epistemic","RI_cost",0,0,0.08
+"RI_cost","EFE_full",0,0,0
+"RI_cost","no_identity",0,0,0
+"RI_cost","no_epistemic",0,0,0
+"RI_cost","RI_cost",200,1,0
