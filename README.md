@@ -50,6 +50,7 @@ Deterministic reproducibility is therefore guaranteed conditional on:
 Numerical equality should be assessed using tolerances documented in Appendix D of the manuscript.
 
 ## Repository Structure
+~~~
 .
 ├── src/
 │   ├── Part-A_EFE Simulations.R        # Core generative models and EFE decision architecture
@@ -63,6 +64,7 @@ Numerical equality should be assessed using tolerances documented in Appendix D 
 │       └── tables/
 ├── LICENSE
 └── README.md
+~~~
 
 The src/outputs/ directory is created automatically at runtime.
 All reported figures, tables, confusion matrices, and diagnostics are written there verbatim.
@@ -91,31 +93,33 @@ Each script is self-contained and writes its outputs automatically.
 ### Option 2: Command Line
 From the repository root:
 
+~~~
   bash
     cd src
     Rscript 01_cr_constant_omega.R
     Rscript 02_fit_cr_params.R
     Rscript 03_run_W3_recovery.R
     Rscript 04_run_W4_crossfit.R
+~~~
 
 Scripts may be executed independently or sequentially.
 Later stages assume outputs only in the conceptual sense, not as file dependencies.
 
 ### Output Artefacts
 Depending on the script executed, outputs include:
-	- Deterministic simulation trajectories (.rds)
-	- Parameter recovery tables (.csv)
-	- Confusion matrices and NA audits (.csv)
-	- Subject-level diagnostics (.csv)
-	- Publication-ready figures (.png)
-	- Forensic metadata and replication anchors (_meta.csv)
+- Deterministic simulation trajectories (.rds)
+- Parameter recovery tables (.csv)
+- Confusion matrices and NA audits (.csv)
+- Subject-level diagnostics (.csv)
+- Publication-ready figures (.png)
+- Forensic metadata and replication anchors (_meta.csv)
 
 All artefacts are machine-readable and suitable for independent verification without re-running simulations.
 
 ### Relationship to the Manuscript
-	* Section 4: Numerical illustrations are generated directly by the simulation code.
-	* Appendix D: Reproducibility conventions implemented here.
-	* Appendix E: W1–W4 diagnostics correspond exactly to scripts 01–04.
+* Section 4: Numerical illustrations are generated directly by the simulation code.
+* Appendix D: Reproducibility conventions implemented here.
+* Appendix E: W1–W4 diagnostics correspond exactly to scripts 01–04.
 
 Figure numbers and table references in the manuscript correspond to the exported artefacts by filename.
 
@@ -123,6 +127,7 @@ Figure numbers and table references in the manuscript correspond to the exported
 If you use or adapt these materials, please cite:
 
 Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architecture of Individual Choice. Working Paper. Version 1.0. Geneva. DOI: https://doi.org/10.5281/zenodo.18009668
+
 Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architecture of Individual Choice: Reference implementation and identification diagnostics (Version 1.0) [Software]. Available at: https://github.com/mwoodfi/2026_Part-A_EFE-Simulations
 
 ### Disclaimer
