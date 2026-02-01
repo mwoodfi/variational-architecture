@@ -131,7 +131,9 @@ Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architect
 Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architecture of Individual Choice: Reference implementation and identification diagnostics (Version 1.0) [Software]. Available at: https://github.com/mwoodfi/2026_Part-A_EFE-Simulations
 
 ### Disclaimer
-This repository contains research code provided for academic and informational purposes only. The software is provided “as is”, without warranty of any kind. Use is entirely at your own risk. For full legal terms, see the LICENSE file.
+This repository contains research code provided for academic and informational purposes only. The software and accompanying materials are provided “as is”, without warranty of any kind. Use is entirely at your own risk.
+
+For full legal terms, including limitations of liability, governing law, and jurisdiction, see the LICENSE file and DISCLAIMER.md.
 
 ### License
 All code and materials are released under the
