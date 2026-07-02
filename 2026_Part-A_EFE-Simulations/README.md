@@ -1,7 +1,7 @@
-# Replication Materials: Expected Free Energy as a Unified Architecture
+# Replication Materials: Expected Free Energy as a Structural Architecture of Individual Choice
 
 **Author:** Marc D. Woodfield  
-**Paper Version:** Working Paper v1.0 (2026)  
+**Paper Version:** Working Paper / Pre-print  
 **License:** Creative Commons Attribution–NonCommercial 4.0 International (CC-BY-NC 4.0)
 
 ## Overview
@@ -18,7 +18,7 @@ This repository serves three distinct purposes:
 
 1.	Numerical illustration of structural mechanisms: Replication of the simulation environments used to illustrate:
     - Identity hysteresis
-    - Emergent probability weighting
+    - Uncertainty-dependent choice distortion
     - Catastrophic recovery dynamics
 
 2.	Implementation-level identification diagnostics (W1–W4): Verification that the implemented EFE architecture:
@@ -42,7 +42,7 @@ RNGkind(
 
 and explicit set.seed() calls at the script or subject level.
 
-Deterministic reproducibility is therefore guaranteed conditional on:
+Deterministic reproducibility is intended conditional on:
 - Identical random seeds
 - Identical RNG settings
 - Identical R version and numerical backend
@@ -50,7 +50,6 @@ Deterministic reproducibility is therefore guaranteed conditional on:
 Numerical equality should be assessed using tolerances documented in Appendix D of the manuscript.
 
 ## Repository Structure
-~~~
 .
 ├── src/
 │   ├── Part-A_EFE Simulations.R        # Core generative models and EFE decision architecture
@@ -58,13 +57,12 @@ Numerical equality should be assessed using tolerances documented in Appendix D 
 │   ├── 02_fit_cr_params.R              # W2: Single-subject estimation coherence
 │   ├── 03_run_W3_recovery.R            # W3: Finite-sample parameter recovery
 │   ├── 04_run_W4_crossfit.R            # W4: Cross-fitting discriminability & falsification
-│   └── outputs/                        # Auto-generated; initially empty
+│   ├── outputs/                        # Auto-generated; initially empty
 │       ├── data/
 │       ├── figures/
 │       └── tables/
 ├── LICENSE
 └── README.md
-~~~
 
 The src/outputs/ directory is created automatically at runtime.
 All reported figures, tables, confusion matrices, and diagnostics are written there verbatim.
@@ -93,56 +91,46 @@ Each script is self-contained and writes its outputs automatically.
 ### Option 2: Command Line
 From the repository root:
 
-~~~
-  bash
+  ```bash
     cd src
     Rscript 01_cr_constant_omega.R
     Rscript 02_fit_cr_params.R
     Rscript 03_run_W3_recovery.R
     Rscript 04_run_W4_crossfit.R
-~~~
+    ```
 
 Scripts may be executed independently or sequentially.
 Later stages assume outputs only in the conceptual sense, not as file dependencies.
 
 ### Output Artefacts
 Depending on the script executed, outputs include:
-- Deterministic simulation trajectories (.rds)
-- Parameter recovery tables (.csv)
-- Confusion matrices and NA audits (.csv)
-- Subject-level diagnostics (.csv)
-- Publication-ready figures (.png)
-- Forensic metadata and replication anchors (_meta.csv)
+	- Deterministic simulation trajectories (.rds)
+	- Parameter recovery tables (.csv)
+	- Confusion matrices and NA audits (.csv)
+	- Subject-level diagnostics (.csv)
+	- Publication-ready figures (.png)
+	- Reproducibility metadata and replication anchors (_meta.csv)
 
-All artefacts are machine-readable and suitable for independent verification without re-running simulations.
+Data, tables, diagnostics, and metadata are machine-readable and suitable for independent inspection without re-running simulations. Figures are exported as publication-ready visual artefacts.
 
 ### Relationship to the Manuscript
-* Section 4: Numerical illustrations are generated directly by the simulation code.
-* Appendix D: Reproducibility conventions implemented here.
-* Appendix E: W1–W4 diagnostics correspond exactly to scripts 01–04.
+	* Section 4: Numerical illustrations are generated directly by the simulation code.
+	* Appendix D: Reproducibility conventions implemented here.
+	* Appendix E: W1–W4 diagnostics correspond exactly to scripts 01–04.
 
 Figure numbers and table references in the manuscript correspond to the exported artefacts by filename.
 
 ### Citation
 If you use or adapt these materials, please cite:
 
-Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architecture of Individual Choice. Working Paper. Version 1.0. Geneva. DOI: https://doi.org/10.5281/zenodo.18009668
-
-Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architecture of Individual Choice: Reference implementation and identification diagnostics (Version 1.0) [Software]. Available at: https://github.com/mwoodfi/2026_Part-A_EFE-Simulations
+Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architecture of Individual Choice. Working Paper. Geneva. DOI: https://doi.org/10.5281/zenodo.18009668
+Woodfield, M. D. (2026). Part A - Expected Free Energy as a Structural Architecture of Individual Choice: Reference implementation and identification diagnostics [Software]. Available at: https://github.com/mwoodfi/variational-architecture/2026_Part-A_EFE-Simulations
 
 ### Disclaimer
-This repository contains research code provided for academic and informational purposes only. The software and accompanying materials are provided “as is”, without warranty of any kind. Use is entirely at your own risk.
-
-For full legal terms, including limitations of liability, governing law, and jurisdiction, see the LICENSE file and DISCLAIMER.md.
+This repository contains research code provided for academic and informational purposes only. The software is provided “as is”, without warranty of any kind. Use is entirely at your own risk. For full legal terms, see the LICENSE file.
 
 ### License
-All code and materials are released under the
-Creative Commons Attribution–NonCommercial 4.0 International (CC-BY-NC 4.0).
-
-You are free to use, modify, and redistribute the materials with appropriate attribution, within the limitations of the granted license. Commercial use is not permitted.
+All code and materials are released under the Creative Commons Attribution–NonCommercial 4.0 International (CC-BY-NC 4.0). You are free to use, modify, and redistribute the materials with appropriate attribution, within the limitations of the granted license. Commercial use is not permitted.
 
 ### Final Note
-This repository is intended to meet elite-journal replication and transparency standards.
-Any failure to reproduce results under the stated conditions constitutes evidence against the implementation or assumptions, not a hidden tuning choice.
-
-No undocumented steps are required.
+This repository is intended to meet elite-journal replication and transparency standards. Any failure to reproduce results under the stated conditions constitutes evidence against the implementation or assumptions, not a hidden tuning choice. No undocumented steps are required.
