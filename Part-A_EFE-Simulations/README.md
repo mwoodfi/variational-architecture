@@ -129,7 +129,7 @@ If you use or adapt these materials, please cite:
 
 Woodfield, M. D. (2026). *Part A - Expected Free Energy as a Structural Architecture of Individual Choice.* Working Paper. Geneva. DOI: https://doi.org/10.5281/zenodo.18009668
 
-Woodfield, M. D. (2026). *Part A - Expected Free Energy as a Structural Architecture of Individual Choice: Reference implementation and identification diagnostics* [Software]. Available at: https://github.com/mwoodfi/variational-architecture/2026_Part-A_EFE-Simulations
+Woodfield, M. D. (2026). *Part A - Expected Free Energy as a Structural Architecture of Individual Choice: Reference implementation and identification diagnostics* [Software]. Available at: https://github.com/mwoodfi/variational-architecture/Part-A_EFE-Simulations
 
 ### Disclaimer
 This repository contains research code provided for academic and informational purposes only. The software is provided “as is”, without warranty of any kind. Use is entirely at your own risk. For full legal terms, see the `LICENSE` file.
