@@ -14,10 +14,6 @@
 ## - tables/<run_id>_meta.csv
 ## - figures/Figure 16_W4_Crossfit_Bar.png  (only if make_figure = TRUE)
 ## - figures/Figure 17_W4_Crossfit_Confusion.png  (only if make_figure = TRUE)
-## - (optional replication outputs, only if do_replication = TRUE):
-## - data/<run_id>_rep_seed<rep_seed>.rds
-## - tables/<run_id>_rep_seed<rep_seed>_confusion_diff.csv
-## - tables/<run_id>_rep_seed<rep_seed>_replication_summary.csv
 ############################################################
 
 rm(list = ls())
@@ -265,7 +261,7 @@ simulate_cr_constant_omega_model <- function(params,
 # -------------------------------------------------------------
 # Three-block generator (IDENTIFICATION-SAFE TEST DESIGN):
 # Block 1: Baseline (Training)
-# Block 2: Lambda identification block (ONLY identity/rigidity breaks symmetry)
+# Block 2: Identity-salient evaluation block (identity rigidity differentially loaded; epistemic value not artificially attenuated).
 # Block 3: Epistemic identification block (identity neutralised; instrumental parity)
 #
 # Principle (referee-safe): omega (agent phenotype) is invariant across blocks;
@@ -278,22 +274,30 @@ simulate_three_blocks_list_model <- function(params, omega, seed, dgp_model) {
     params, omega = omega, model = dgp_model, seed = seed
   )
   
-  # --- Block 2 (Lambda identification / NO epistemic attenuation; instrumental parity) ---
+  # --- Block 2 (Identity/rigidity identification block) ---
+  # Purpose: differentially load identity rigidity while removing the main
+  # epistemic confound. This is an identification design, not a substantive
+  # behavioural claim about ordinary environments.
   params2 <- params
   
-  # 1) Identity salience via asymmetric identity priors (directional pull toward A)
+  # 1) Identity salience via asymmetric identity priors.
+  # Directional pull toward A makes switching to B identity-costly under
+  # models with active identity rigidity.
   total_id <- params$id_prior_a + params$id_prior_b
   params2$id_prior_a <- total_id * 0.90
   params2$id_prior_b <- total_id * 0.10
   
-  # 2) Instrumental parity: remove preference differences so lambda is the only driver
+  # 2) Instrumental parity: remove preference differences so that the block
+  # differentially loads identity rigidity rather than instrumental utility.
   params2$k_B0    <- params2$k_A0
   params2$k_state <- 0
   
-  # 3) Epistemic attenuation REMOVED: keep harm priors unchanged (no +1000 inflation)
-  prior_inflation <- 0
-  params2$harm_prior_a <- params$harm_prior_a
-  params2$harm_prior_b <- params$harm_prior_b
+  # 3) Epistemic attenuation: inflate harm priors so the Beta-Bernoulli
+  # information-gain term is near zero in this block.
+  # This prevents no_identity from mimicking identity rigidity through gamma_o.
+  prior_inflation <- 1000
+  params2$harm_prior_a <- params$harm_prior_a + prior_inflation
+  params2$harm_prior_b <- params$harm_prior_b + prior_inflation
   
   df2 <- simulate_cr_constant_omega_model(
     params2, omega = omega, model = dgp_model, seed = seed + 9999
@@ -321,6 +325,10 @@ simulate_three_blocks_list_model <- function(params, omega, seed, dgp_model) {
   # Minimal numeric diagnostics for metadata (no side effects; returned to caller):
   IG_base <- cr_epistemic_value(params$harm_prior_a,  params$harm_prior_b)
   IG_b2   <- cr_epistemic_value(params2$harm_prior_a, params2$harm_prior_b)
+  
+  if (is.finite(IG_base) && IG_base > 0 && (IG_b2 / IG_base) > 0.01) {
+    stop("W4 Block 2 is not sufficiently epistemically attenuated. Check prior_inflation.")
+  }
   
   list(
     df1 = df1, df2 = df2, df3 = df3,
@@ -833,7 +841,8 @@ run_W4_and_write_outputs <- function(N = 200,
   # -------------------------------------------------------------
   # Pull a representative diagnostic from the *first* subject of the run,
   # deterministically keyed by seed0 and the first DGP label.
-  # This is a referee-safe numeric anchor for “IG is negligible in Block 2”.
+  # Referee-safe numeric anchor documenting that Block 2 leaves the epistemic
+  # prior treatment unchanged relative to baseline.
   diag_seed <- seed0 + 1 + 100000 * match(dgps[1], dgps)
   diag_blocks <- simulate_three_blocks_list_model(params, omega_truth, diag_seed, dgp_model = dgps[1])
   
@@ -848,11 +857,11 @@ run_W4_and_write_outputs <- function(N = 200,
     delta_ll_min = 2.0,
     block_seed_offsets = "B2:+9999;B3:+19999",
     
-    # Block 2 (Identity salience + epistemic attenuation)
+    # Block 2 (Identity salience under instrumental parity)
     block2_identity_salience =
       "total_id <- params$id_prior_a + params$id_prior_b; params2$id_prior_a <- total_id*0.90; params2$id_prior_b <- total_id*0.10; params2$k_B0 <- params2$k_A0; params2$k_state <- 0",
-    block2_epistemic_attenuation =
-      "None (no harm-prior inflation; Block 2 is a lambda-identification block)",
+    block2_epistemic_treatment =
+      "Epistemic attenuation via harm-prior inflation: params2$harm_prior_a <- params$harm_prior_a + 1000; params2$harm_prior_b <- params$harm_prior_b + 1000.",
     
     # Block 3 (Instrumental parity + identity neutralisation)
     block3_instrumental_parity =
@@ -863,7 +872,7 @@ run_W4_and_write_outputs <- function(N = 200,
     # Numeric diagnostic (single-run anchor; makes “IG ~ 0” checkable)
     IG_base_priors =
       as.numeric(diag_blocks$diag$IG_base),
-    IG_block2_inflated_priors =
+    IG_block2_priors =
       as.numeric(diag_blocks$diag$IG_block2),
     IG_block2_to_base_ratio =
       as.numeric(ifelse(diag_blocks$diag$IG_base > 0,
@@ -943,8 +952,20 @@ run_W4_and_write_outputs <- function(N = 200,
   invisible(w4)
 }
 
-# -------------------------------------------------------------
-# OPTIONAL: Run once when sourcing (comment out for “defs-only”)
-# -------------------------------------------------------------
-# Example:
-# w4 <- run_W4_and_write_outputs(N = 200, seed0 = 5000, make_figures = TRUE)
+# Set RUN_W4 <- FALSE above for definitions-only use.
+# Default release behaviour runs the manuscript W4 diagnostic with N = 200 and seed0 = 5000.
+
+
+############################################################
+## Execution Entry Point
+############################################################
+
+RUN_W4 <- TRUE
+
+if (isTRUE(RUN_W4)) {
+  w4 <- run_W4_and_write_outputs(
+    N = 200,
+    seed0 = 5000,
+    make_figures = TRUE
+  )
+}

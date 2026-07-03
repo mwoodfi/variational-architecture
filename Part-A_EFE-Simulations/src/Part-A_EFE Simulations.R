@@ -1,6 +1,7 @@
 ############################################################
-## efe_simulations.R
-## Reference implementation for Part A: "Beyond Utility"
+## Part-A_EFE Simulations.R
+## Reference implementation for Part A:
+## "Expected Free Energy as a Structural Architecture of Individual Choice"
 ##
 ## Deterministic replication:
 ## - For full reproduction of all figures and data as used in
@@ -8,7 +9,7 @@
 ##
 ##       run_all_simulations(seed = 2026)
 ##
-## - The non-interactive entry point (Rscript efe_simulations.R)
+## - The non-interactive entry point (Rscript Part-A_EFE Simulations.R)
 ##   automatically uses seed = 2026 and writes outputs/...
 ##
 ## - Experiments 4.2 and 4.3 are seed-isolated; the same seed reproduces
@@ -18,7 +19,7 @@
 ## 0. Utility functions (Maths, Style & Divergences)
 ## 1. Generic EFE implementation (The Canonical Decomposition)
 ## 2. Experiment 4.1: Identity Hysteresis (Theorem 4 / App B.4)
-## 3. Experiment 4.2: Emergent Probability Weighting (Prop 2 / App A.8)
+## 3. Experiment 4.2: Uncertainty-Dependent Choice Distortion (Prop 2 / App A.8)
 ## 4. Experiment 4.3: Catastrophic Recovery (App B.3 / App B.5)
 ## 5. Master Execution Function
 ## 6. Command Line Entry Point
@@ -56,7 +57,13 @@ kl_divergence <- function(p, q) {
   if (length(p) != length(q)) {
     stop("kl_divergence: p and q must have same length.")
   }
-  idx <- (p > 0) & (q > 0)
+  if (any(p < 0) || any(q < 0)) {
+    stop("kl_divergence: p and q must be non-negative.")
+  }
+  if (any(p > 0 & q == 0)) {
+    return(Inf)
+  }
+  idx <- p > 0
   if (!any(idx)) return(0)
   sum(p[idx] * log(p[idx] / q[idx]))
 }
@@ -155,7 +162,7 @@ draw_pub_grid <- function(x_ticks, y_ticks_major, y_ticks_minor = NULL,
 
 ## 1.1 Environment specification ---------------------------
 
-## Base outcome support: o ??? {0, 1}
+## Base outcome support: o ∈ {0, 1}
 outcomes <- c(0, 1)
 
 ## ALIGNMENT: Appendix A.2 / Theorem 1
@@ -188,7 +195,7 @@ make_obs_model <- function(p_succ_policy1 = c(0.2, 0.8),
   P_succ
 }
 
-## 1.2 Predictive outcome distribution Q(o | ??) ------------
+## 1.2 Predictive outcome distribution Q(o | π) ------------
 
 predict_Q_o_given_pi <- function(pi_idx, P_s, P_succ) {
   if (!pi_idx %in% c(1L, 2L)) stop("predict_Q_o_given_pi: pi_idx must be 1 or 2.")
@@ -197,9 +204,9 @@ predict_Q_o_given_pi <- function(pi_idx, P_s, P_succ) {
   c(`0` = 1 - p1, `1` = p1)
 }
 
-## 1.3 Expected Information Gain IG(??) ---------------------
+## 1.3 Expected Information Gain IG(π) ---------------------
 ## ALIGNMENT: Appendix A.4 / Theorem 2
-## Implements Eq (A.4.2): E_o [D_KL(Q(s|o,??) || Q(s|??))]
+## Implements Eq (A.4.2): E_o [D_KL(Q(s|o,π) || Q(s|π))]
 ## Also equivalent to Value of Information (VoI).
 
 compute_IG <- function(pi_idx, P_s, P_succ) {
@@ -226,7 +233,7 @@ compute_IG <- function(pi_idx, P_s, P_succ) {
   IG
 }
 
-## 1.4 Complexity term C(??) ??? generic placeholder ----------
+## 1.4 Complexity term C(π) – generic placeholder ----------
 ## ALIGNMENT: Appendix A.5 (Rational Inattention) vs A.6 (Identity)
 ## Acts as a switch between 'Information Cost' (RI) and 'Identity Cost'.
 
@@ -244,11 +251,12 @@ compute_complexity_generic <- function(pi_idx,
   stop("compute_complexity_generic: Unknown complexity mode")
 }
 
-## 1.5 Expected Free Energy G(??; ??) ------------------------
+## 1.5 Expected Free Energy G(π; Ω) ------------------------
 ## ALIGNMENT: Section 2.2 (The Canonical Decomposition)
-## G(??) = Instr - ??_o * IG + ?? * C
+## G(π) = Instr - γ_o * IG + λ * C
 ##
-## This function is the structural basis for Theorem 6 (Structural Completeness).
+## This function is the structural basis for Theorem 6
+## (Restricted Normal-Form Embedding Property).
 
 compute_EFE <- function(pi_idx,
                         P_o_pref,
@@ -287,16 +295,8 @@ compute_EFE_identity_regime <- function(
   gamma_p * E_neglogP + identity_cost
 }
 
-identity_cost_for_policy <- function(policy_label, theta, lambda_id, sigma_q, sigma_p) {
-  target <- if (policy_label == "pi1") -1.0 else 1.0
-  lambda_id * kl_gauss_1d(
-    mu_q  = theta,  sig_q = sigma_q,
-    mu_p  = target, sig_p = sigma_p
-  )
-}
-
 #############################################################
-## 2. Experiment 4.1 ??? Identity hysteresis
+## 2. Experiment 4.1 – Identity hysteresis
 ##
 ## Implementation of Theorem 4 (Identity Economics Representation)
 ## and Appendix B.4 (Hysteresis and Path Dependence).
@@ -329,7 +329,7 @@ simulate_identity_hysteresis <- function(
     make_obs_model(c(p1_val, p1_val), c(p2_val, p2_val))
   }
   
-  ## Identity state: -1 = ??1 basin, +1 = ??2 basin
+  ## Identity state: -1 = π1 basin, +1 = π2 basin
   ## Represents the 'Deep Prior' P(theta) in Appendix A.6
   theta <- -1.0
   
@@ -383,7 +383,7 @@ simulate_identity_hysteresis <- function(
     )
     
     ## Choice probabilities
-    ## ALIGNMENT: Boltzmann???Luce/Gibbs choice mapping; decision precision ??
+    ## ALIGNMENT: Boltzmann–Luce/Gibbs choice mapping; decision precision β
     probs  <- softmax(-beta_plot * c(G1, G2))
     prob_B <- probs[2]
     
@@ -497,7 +497,7 @@ run_identity_hysteresis <- function() {
 }
 
 ############################################################
-## 3. Experiment 4.2 ??? Emergent probability weighting
+## 3. Experiment 4.2 – Uncertainty-dependent choice distortion
 ##
 ## Implementation of Proposition 2 (Prospect Theory Asymmetries)
 ## and Appendix A.8 (Certainty Collapse & Mutual Information).
@@ -534,7 +534,7 @@ E_H_Beta <- function(a, b) {
   -(E_p_log_p + E_1mp_log_1mp)
 }
 
-## Mutual information IG_t(R) for Beta???Bernoulli
+## Mutual information IG_t(R) for Beta–Bernoulli
 ## STRICT ALIGNMENT: Appendix A.8, Eq (A.8.13)
 ## Calculates the exact "Jensen Gap" of the entropy function.
 IG_BetaBernoulli_MI <- function(a, b, eps = 1e-12) {
@@ -557,10 +557,10 @@ IG_BetaBernoulli_MI <- function(a, b, eps = 1e-12) {
 
 ## Internal: compute risky EFE given Beta(a,b)
 ## ALIGNMENT: Section 3.8 (Net Epistemic Coefficient)
-.compute_G_R_pw <- function(a, b,
-                            m_safe, R_win,
-                            gamma_p, gamma_o, lambda,
-                            IG_cache, eps = 1e-12) {
+.compute_G_R_ucd <- function(a, b,
+                             m_safe, R_win,
+                             gamma_p, gamma_o, lambda,
+                             IG_cache, eps = 1e-12) {
   
   G_inst_R <- .compute_G_inst_R_EU(
     a = a, b = b,
@@ -585,12 +585,12 @@ IG_BetaBernoulli_MI <- function(a, b, eps = 1e-12) {
 
 ## Internal: Calibration offset Delta
 ## Ensures valid comparison at p_ref (Figure 10 reporting level)
-.compute_calibration_delta_pw_choice_MI <- function(p_ref,
-                                                    prior_a, prior_b,
-                                                    m_safe, R_win,
-                                                    gamma_p, gamma_o, lambda,
-                                                    beta_choice,
-                                                    IG_cache) {
+.compute_calibration_delta_ucd_choice_MI <- function(p_ref,
+                                                     prior_a, prior_b,
+                                                     m_safe, R_win,
+                                                     gamma_p, gamma_o, lambda,
+                                                     beta_choice,
+                                                     IG_cache) {
   eps <- 1e-12
   p_ref <- min(max(p_ref, eps), 1 - eps)
   
@@ -627,7 +627,7 @@ IG_BetaBernoulli_MI <- function(a, b, eps = 1e-12) {
       n_choose_R <- 0L
       
       for (t in seq_len(n_cal_trials)) {
-        G_R <- .compute_G_R_pw(
+        G_R <- .compute_G_R_ucd(
           a = a, b = b,
           m_safe = m_safe,
           R_win  = R_win,
@@ -667,7 +667,7 @@ IG_BetaBernoulli_MI <- function(a, b, eps = 1e-12) {
   uniroot(f_root, lower = lo, upper = hi, tol = 1e-3)$root
 }
 
-simulate_probability_weighting <- function(
+simulate_uncertainty_choice_distortion <- function(
     p_grid       = seq(0.01, 0.99, length.out = 120),
     m_safe       = 0.5,
     R_win        = 1.0,
@@ -724,7 +724,7 @@ simulate_probability_weighting <- function(
   
   ## Calibration offset
   ## Calibration uses a fixed local seed and restores the caller RNG state.
-  Delta <- .compute_calibration_delta_pw_choice_MI(
+  Delta <- .compute_calibration_delta_ucd_choice_MI(
     p_ref = p_ref,
     prior_a = prior_a, prior_b = prior_b,
     m_safe = m_safe, R_win = R_win,
@@ -767,7 +767,7 @@ simulate_probability_weighting <- function(
       ## As 't' increases, 'a' and 'b' grow, causing IG -> 0
       ## and behavior to converge to EU baseline.
       for (t in seq_len(n_trials)) {
-        G_R <- .compute_G_R_pw(
+        G_R <- .compute_G_R_ucd(
           a = a, b = b,
           m_safe = m_safe,
           R_win  = R_win,
@@ -807,10 +807,12 @@ simulate_probability_weighting <- function(
   }
   
   out <- data.frame(
-    p           = p_grid,
-    freq_R      = mean_freq_R,
-    sd_R        = sd_freq_R,
-    p_thresh_EU = p_ref
+    p                 = p_grid,
+    freq_R            = mean_freq_R,
+    sd_R              = sd_freq_R,
+    p_thresh_EU       = p_ref,
+    calibration_delta = Delta,
+    net_info_coeff    = gamma_o - lambda
   )
   
   if (return_belief_diagnostics) {
@@ -821,14 +823,14 @@ simulate_probability_weighting <- function(
   out
 }
 
-plot_probability_weighting <- function(df,
-                                       show_p_hat_end = FALSE,
-                                       blue = rgb(44, 100, 156, maxColorValue = 255)) {
+plot_uncertainty_choice_distortion <- function(df,
+                                               show_p_hat_end = FALSE,
+                                               blue = rgb(44, 100, 156, maxColorValue = 255)) {
   if (!all(c("p", "freq_R", "p_thresh_EU") %in% names(df))) {
-    stop("plot_probability_weighting: df must contain columns p, freq_R, p_thresh_EU.")
+    stop("plot_uncertainty_choice_distortion: df must contain columns p, freq_R, p_thresh_EU.")
   }
   if (show_p_hat_end && !"p_hat_end_mean" %in% names(df)) {
-    stop("plot_probability_weighting: p_hat_end_mean not found in df. Re-run simulate_probability_weighting(return_belief_diagnostics = TRUE).")
+    stop("plot_uncertainty_choice_distortion: p_hat_end_mean not found in df. Re-run simulate_uncertainty_choice_distortion(return_belief_diagnostics = TRUE).")
   }
   
   op <- set_plot_style()
@@ -898,25 +900,25 @@ plot_probability_weighting <- function(df,
   par(xpd = FALSE)
 }
 
-run_probability_weighting <- function(show_p_hat_end = FALSE,
-                                      show_progress = TRUE,
-                                      progress_inner = FALSE,
-                                      seed = 2026) {
+run_uncertainty_choice_distortion <- function(show_p_hat_end = FALSE,
+                                              show_progress = TRUE,
+                                              progress_inner = FALSE,
+                                              seed = 2026) {
   
   # By default, use a fixed seed to ensure the entire run (Calibration + MC)
   # is fully deterministic and independent of prior RNG states.
-  df <- simulate_probability_weighting(
+  df <- simulate_uncertainty_choice_distortion(
     return_belief_diagnostics = show_p_hat_end,
     show_progress  = show_progress,
     progress_inner = progress_inner,
     seed = seed 
   )
-  plot_probability_weighting(df, show_p_hat_end = show_p_hat_end)
+  plot_uncertainty_choice_distortion(df, show_p_hat_end = show_p_hat_end)
   invisible(df)
 }
 
 ############################################################
-## 4. Experiment 4.3 ??? Catastrophic Recovery
+## 4. Experiment 4.3 — Catastrophic Recovery
 ##
 ## Implements the "Phase Transition" mechanism described in 
 ## Section 3 and formally characterized in Appendix B.3 (Bifurcations).
@@ -925,11 +927,6 @@ run_probability_weighting <- function(show_p_hat_end = FALSE,
 ## - Epistemic Value: Eq (A.8.13) "Entropy Gap" (exact digamma solution)
 ## - Identity Cost:   Appendix A.6 (KL-divergence rigidity)
 ## - Dynamics:        Appendix B.5 (Slow hyperparameter adaptation)
-##
-## IMPLEMENTATION PATCH (behavioural activation of identity term):
-## - Introduces params$id_cost_scale and applies it to the identity KL term.
-## - Keeps all other logic unchanged.
-## - Adds optional output columns for term magnitudes (instr_B, epi_B, comp_B, lambda_dyn).
 ############################################################
 
 # ----------------------------
@@ -944,7 +941,7 @@ cr_kl_beta <- function(a, b, c, d) {
     (b - d) * (digamma(b) - digamma(a + b))
 }
 
-# Mutual information for Beta???Bernoulli in "entropy gap" form
+# Mutual information for Beta–Bernoulli in "entropy gap" form
 # EXACT implementation of Appendix A.8, Eq (A.8.13) and (A.8.14)
 cr_ig_beta_bernoulli <- function(a, b) {
   phat <- a / (a + b)
@@ -977,17 +974,19 @@ cr_choice_prob <- function(GA, GB, beta) {
 cr_instr_cost <- function(s, policy, params) {
   if (policy == "A") {
     # Policy A (Addiction): Fixed low cost (short-term utility)
-    params$k_A0
+    params$k_A0 
   } else {
     # Policy B (Health): Cost depends on state s
-    params$k_B0 + params$k_state * s
+    # If s=1 (Sick): High cost (withdrawal/effort)
+    # If s=0 (Healthy): Low cost
+    params$k_B0 + params$k_state * s 
   }
 }
 
 # Identity Rigidity (Appendix A.6)
-# PATCH: scale identity KL so lambda has behavioural leverage in the choice kernel.
 cr_identity_cost <- function(id_a, id_b, params) {
-  params$id_cost_scale * cr_kl_beta(id_a, id_b, params$id_prior_a, params$id_prior_b)
+  scale <- if (is.null(params$id_cost_scale)) 25 else params$id_cost_scale
+  scale * cr_kl_beta(id_a, id_b, params$id_prior_a, params$id_prior_b)
 }
 
 cr_epistemic_value <- function(a, b) {
@@ -1016,10 +1015,16 @@ cr_efe_policy <- function(s, policy, beliefs, omega, params) {
   instr <- omega$gamma_p * cr_instr_cost(s, policy, params)
   
   # 2. Epistemic Term (Information Gain)
-  IG <- if (policy == "A") 0 else cr_epistemic_value(beliefs$harm_aB, beliefs$harm_bB)
+  # Policy A is a "habit" (IG=0), Policy B is informative
+  IG <- if (policy == "A") {
+    0
+  } else {
+    cr_epistemic_value(beliefs$harm_aB, beliefs$harm_bB)
+  }
   epi <- -omega$gamma_o * IG
   
   # 3. Complexity Term (Identity Rigidity)
+  # Applied as a barrier to Policy B (switching cost)
   comp <- if (policy == "B") {
     omega$lambda * cr_identity_cost(beliefs$id_a, beliefs$id_b, params)
   } else {
@@ -1049,10 +1054,11 @@ cr_efe_policy <- function(s, policy, beliefs, omega, params) {
   
   for (t in seq_len(params$T_total)) {
     om <- cr_omega_path(t, params)
+    om$lambda <- om$lambda + lambda_dyn
     
-    # PATCH (bookkeeping only): keep static lambda separate from dynamic barrier
-    om$lambda_static <- om$lambda
-    om$lambda <- om$lambda_static + lambda_dyn
+    # Pre-update state quantities entering the decision calculation at time t.
+    harm_mean_B_pre <- beliefs$harm_aB / (beliefs$harm_aB + beliefs$harm_bB)
+    id_KL_pre <- cr_identity_cost(beliefs$id_a, beliefs$id_b, params)
     
     # Calculate EFE for both policies
     GA <- cr_efe_policy(s[t], "A", beliefs, om, params)
@@ -1081,6 +1087,7 @@ cr_efe_policy <- function(s, policy, beliefs, omega, params) {
     }
     
     # Dynamic Rigidity (Lambda)
+    # Simulates the "Collapse" of the resistance barrier
     lambda_dyn <- lambda_dyn +
       (policy_chosen == "A") * params$lambda_gain_A -
       (policy_chosen == "B") * params$lambda_relax_B
@@ -1094,33 +1101,31 @@ cr_efe_policy <- function(s, policy, beliefs, omega, params) {
       s[t + 1] <- pmin(pmax(s[t] + drift + rnorm(1, 0, params$s_noise), 0), 1)
     }
     
-    # Optional term magnitudes for referee diagnostics (no behavioural effect)
-    IG_B <- cr_epistemic_value(beliefs$harm_aB, beliefs$harm_bB)
-    instr_B <- om$gamma_p * cr_instr_cost(s[t], "B", params)
-    epi_B   <- -om$gamma_o * IG_B
-    comp_B  <- om$lambda * cr_identity_cost(beliefs$id_a, beliefs$id_b, params)
-    
     out[[t]] <- data.frame(
       t = t,
       s = s[t],
       gamma_p = om$gamma_p,
       gamma_o = om$gamma_o,
       lambda  = om$lambda,
-      lambda_static = om$lambda_static,
-      lambda_dyn = lambda_dyn,
+      ## Pre-update decision quantities
       G_A = GA,
       G_B = GB,
       DeltaG = GA - GB,
       p_B = pB,
+      harm_mean_B_pre = harm_mean_B_pre,
+      id_KL_pre = id_KL_pre,
+      
+      ## Realised action and observation
       choice_B = choiceB,
       harm_obs = harm_obs,
+      
+      ## Post-update belief and identity states
       harm_mean_B = beliefs$harm_aB / (beliefs$harm_aB + beliefs$harm_bB),
+      a = beliefs$harm_aB,
+      b = beliefs$harm_bB,
       id_a = beliefs$id_a,
       id_b = beliefs$id_b,
-      id_KL = cr_identity_cost(beliefs$id_a, beliefs$id_b, params),
-      instr_B = instr_B,
-      epi_B = epi_B,
-      comp_B = comp_B
+      id_KL = cr_identity_cost(beliefs$id_a, beliefs$id_b, params)
     )
   }
   
@@ -1134,21 +1139,21 @@ cr_efe_policy <- function(s, policy, beliefs, omega, params) {
 params_catastrophic_recovery <- list(
   seed = 2026,
   T_total = 220L,
-  s0 = 0.95,
+  s0 = 0.95,          
   s_pref = 0.0,
   beta_choice = 8.0,
   
   # Initial Rigidity (Barrier Height)
-  lambda0 = 0.05,
+  lambda0 = 0.05,      
   
   # Insight Dynamics (The Trigger)
   gamma_o_min = 0.1,
-  gamma_o_max = 18.0,
+  gamma_o_max = 18.0, 
   
   # Instrumental Landscape (The Trap)
   k_A0 = -1.0,
   k_B0 = -1.5,
-  k_state = 1.1,
+  k_state = 1.1,      
   
   gamma_p = 1.0,
   t_event = 80L,
@@ -1165,17 +1170,14 @@ params_catastrophic_recovery <- list(
   id_prior_b = 6,
   
   # Dynamics constants
-  id_update_strength = 0.01,
+  id_update_strength = 0.01, 
   id_recovery_ratio = 0.5,
-  
-  # Identity-cost normalisation (PATCH)
-  # Increases the behavioural leverage of the identity rigidity term without redefining lambda.
   id_cost_scale = 25,
   
-  lambda_base = 0.1,
+  lambda_base = 0.1,  
   lambda_gain_A = 0.01,
   lambda_relax_B = 0.05,
-  lambda_event_drop = 0.1,
+  lambda_event_drop = 0.1, 
   lambda_event_width = 15,
   
   s_drift_A = 0.01,
@@ -1280,6 +1282,19 @@ run_all_simulations <- function(output_dir = "outputs", seed = 2026) {
   data_dir <- file.path(output_dir, "data")
   if (!dir.exists(data_dir)) dir.create(data_dir)
   
+  manifest <- list(
+    generated_at = Sys.time(),
+    seed = seed,
+    R_version = R.version.string,
+    RNGkind = RNGkind(),
+    sessionInfo = capture.output(sessionInfo())
+  )
+  saveRDS(manifest, file.path(data_dir, "replication_manifest.rds"))
+  writeLines(
+    unlist(manifest$sessionInfo),
+    con = file.path(data_dir, "replication_manifest_sessionInfo.txt")
+  )
+  
   message("Starting Experiment 4.1: Identity Hysteresis...")
   # Exp 4.1 is naturally deterministic (no random draws)
   df_hys <- simulate_identity_hysteresis()
@@ -1288,12 +1303,12 @@ run_all_simulations <- function(output_dir = "outputs", seed = 2026) {
   plot_identity_hysteresis(df_hys)
   dev.off()
   
-  message("Starting Experiment 4.2: Probability Weighting...")
+  message("Starting Experiment 4.2: Uncertainty-Dependent Choice Distortion...")
   # Explicitly passing seed ensures MC runs are seed-isolated modules
-  df_pw <- simulate_probability_weighting(seed = seed)
-  saveRDS(df_pw, file.path(data_dir, "probability_weighting.rds"))
-  png(file.path(figs_dir, "Figure 10_Probability Weighting.png"), width = 900, height = 600)
-  plot_probability_weighting(df_pw)
+  df_ucd <- simulate_uncertainty_choice_distortion(seed = seed)
+  saveRDS(df_ucd, file.path(data_dir, "uncertainty_choice_distortion.rds"))
+  png(file.path(figs_dir, "Figure 10_Uncertainty Choice Distortion.png"), width = 900, height = 600)
+  plot_uncertainty_choice_distortion(df_ucd)
   dev.off()
   
   message("Starting Experiment 4.3: Catastrophic Recovery...")
@@ -1329,9 +1344,12 @@ run_all_simulations <- function(output_dir = "outputs", seed = 2026) {
   plot_catastrophic_recovery(df_cr, blue = blue)
   dev.off()
   
+  message("Section 4 simulations complete. Results saved to: ",
+          normalizePath(output_dir, mustWork = FALSE))
+  
   invisible(list(
     hysteresis = df_hys,
-    prob_weighting = df_pw,
+    uncertainty_choice_distortion = df_ucd,
     catastrophic_recovery = df_cr
   ))
 }
@@ -1340,8 +1358,29 @@ run_all_simulations <- function(output_dir = "outputs", seed = 2026) {
 ## 6. Execution Entry Point -------------------------------
 ############################################################
 
-if (!interactive()) {
-  message("Running all simulations with fixed seed (2026)...")
+############################################################
+## 6. Execution Entry Point -------------------------------
+############################################################
+
+## Execute only when this file is run directly via Rscript,
+## not when sourced by W1-W4 diagnostic scripts.
+.is_direct_rscript_run <- function(this_basename) {
+  if (interactive()) return(FALSE)
+  
+  cmd <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("^--file=", cmd, value = TRUE)
+  
+  if (length(file_arg) != 1L) return(FALSE)
+  
+  executed_file <- sub("^--file=", "", file_arg)
+  identical(
+    basename(normalizePath(executed_file, mustWork = FALSE)),
+    this_basename
+  )
+}
+
+if (.is_direct_rscript_run("Part-A_EFE Simulations.R")) {
+  message("Running Section 4 simulations with fixed seed (2026)...")
   run_all_simulations(seed = 2026)
   message("Done. Results saved to ./outputs/")
 }

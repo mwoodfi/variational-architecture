@@ -7,9 +7,13 @@
 ##
 ## AUTO-EXPORT:
 ## - Table: tables/Table1_W3_recovery_summary.csv
-## - Figure 14: figures/main/Figure 14_W3_recovery_boxplots.png
-## - Appendix figs: figures/appendix/Figure 15-... (see below)
-## - Raw outputs: outputs/res_small.csv, res_medium.csv, res_large.csv (+.RData)
+## - Figure 14: figures/Figure 14_W3_recovery_boxplots.png
+## - Appendix figs: figures/Figure 15-... (see below)
+## Raw outputs:
+## - data/W3_recovery_twoblock.RData
+## - tables/W3_res_small.csv
+## - tables/W3_res_medium.csv
+## - tables/W3_res_large.csv
 ############################################################
 
 
